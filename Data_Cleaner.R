@@ -27,47 +27,6 @@ library(pdftools)
 # Helpful sources
 # CRAN spatiotemporal overview: https://cran.r-project.org/web/views/SpatioTemporal.html
 
-# Scraping neighborhood data
-compNeighbors <- read.csv("FinalProj/neighborhoodList.csv", header = FALSE) %>% 
-  rename(Neighborhood = V1) %>% 
-  mutate(Neighborhood = gsub(gsub(gsub(tolower(Neighborhood), 
-                                  pattern = "\\s+", replacement = ""), 
-                                  pattern = "-", replacement = ""),
-                                  pattern = "[.]", replacement = ""))
-
-# Downloading pdf's
-lapply(X = compNeighbors$Neighborhood,
-       FUN = function(x) {download.file(url = paste0("http://www.minneapolismn.gov/regservices/",
-       x, "profile2016"), paste0("FinalProj/PDFs/", x, ".pdf"), mode="wb")})
-
-# Extracting text from PDF's
-extractor <- function(neighbor) {
-  print(neighbor)
-text <- pdf_text(paste0("FinalProj/PDFs/", neighbor, ".pdf"))[-c(1:5, 8:13)]
-
-# Extracting population estimates
-pop2010 <- text[1] %>% str_split(pattern = "other than English\r\n                   Number:") %>% 
-  map(2) %>% trimws() %>% str_split(pattern = " ") %>% map(1) %>% unlist() %>% 
-  gsub(pattern = ",", replacement = "")
-
-# # Extracting perc 17 years or younger
-# percU17 <- text[1] %>% str_split(pattern = "Percentage:               100.0%               ") %>% 
-#   map(2) %>% str_split(pattern = " ") %>% map(1) %>% gsub(pattern = "%", replacement = "")
-# 
-# # Extracting perc of housing units vacant
-# percVacant <- text[2] %>% str_split(pattern = "Percentage:            100.0%              ") %>% 
-#   map(2) %>% str_split(pattern = " ") %>% map(10) %>% gsub(pattern = "%", replacement = "")
-# 
-# # Extracting perc with income less than $35,000
-# percL35 <- text[2] %>% str_split(pattern = "Education & Household Income") %>% map(2) %>% 
-#   str_split(pattern = " ") %>% map(962) %>% gsub(pattern = "%", replacement = "")
-
-return(data.frame(Neighborhood = neighbor, pop2010 = pop2010))
-}
-
-# Extracting neighborhood data from PDFs
-neighbor2010 <- map_dfr(.x = compNeighbors$Neighborhood, .f = extractor)
-
 # Proper case function
 propCase <- function(x) {
   x <- as.character(x)
